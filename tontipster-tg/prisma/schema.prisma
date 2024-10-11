@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  walletAddress   String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  bets            Bet[]
+  betParticipants BetParticipant[]
+  Transaction     Transaction[]
+}
+
+model Fixture {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  fixtureId     Int      @unique
+  fixtureDate   DateTime
+  venueName     String
+  venueCity     String
+  statusLong    String
+  statusElapsed Int?
+  leagueDetails Json
+  teamsDetails  Json
+  scoreDetails  Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  bets          Bet[]
+}
+
+model Bet {
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  creator      User             @relation(fields: [creatorId], references: [id])
+  creatorId    String           @db.ObjectId
+  outcome      String?
+  description  String?
+  amount       Float
+  odds         Float
+  status       String           @default("open") // open, pending, in_progress, closed
+  expiryDate   DateTime
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  participants BetParticipant[]
+  transactions Transaction[]
+  Fixture      Fixture?         @relation(fields: [fixtureId], references: [id])
+  fixtureId    String?          @db.ObjectId
+}
+
+model BetParticipant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  bet         Bet      @relation(fields: [betId], references: [id])
+  betId       String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @db.ObjectId
+  prediction  String
+  isCreator   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Transaction {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @db.ObjectId
+  bet             Bet      @relation(fields: [betId], references: [id])
+  betId           String   @db.ObjectId
+  transactionType String
+  amount          Float
+  transactionHash String   @unique
+  createdAt       DateTime @default(now())
+}
